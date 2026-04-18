@@ -9,7 +9,7 @@
  *  4. Display per-game result cards
  *  5. Save entire ticket to AsyncStorage history
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect } from 'react';
 import {
   View,
   Text,
@@ -25,6 +25,7 @@ import type { RootStackParamList } from '../App';
 import { fetchMegaSenaResult } from '../services/api';
 import { checkAllGames } from '../utils/checker';
 import type { GameResult } from '../utils/checker';
+import { useI18n } from '../i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Result'>;
 
@@ -32,6 +33,12 @@ const HISTORY_KEY = '@lottolens_history';
 
 export default function ResultScreen({ route, navigation }: Props) {
   const { games, contest, date } = route.params;
+  const { t } = useI18n();
+
+  // Set translated header title
+  useLayoutEffect(() => {
+    navigation.setOptions({ title: t('nav_results') });
+  }, [navigation, t]);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -48,7 +55,7 @@ export default function ResultScreen({ route, navigation }: Props) {
     setError(null);
 
     try {
-      const result = await fetchMegaSenaResult(contest);
+      const result = await fetchMegaSenaResult(contest, t as any);
       const drawn = result.dezenas.map((d: string) => parseInt(d, 10));
       setDrawnNumbers(drawn);
 
@@ -132,7 +139,7 @@ export default function ResultScreen({ route, navigation }: Props) {
     return (
       <SafeAreaView style={styles.centered}>
         <ActivityIndicator size="large" color="#5588cc" />
-        <Text style={styles.loadingText}>Fetching results...</Text>
+        <Text style={styles.loadingText}>{t('result_loading')}</Text>
       </SafeAreaView>
     );
   }
@@ -144,13 +151,13 @@ export default function ResultScreen({ route, navigation }: Props) {
         <Text style={styles.errorIcon}>⚠️</Text>
         <Text style={styles.errorText}>{error}</Text>
         <TouchableOpacity style={styles.retryBtn} onPress={fetchResult}>
-          <Text style={styles.retryBtnText}>Try Again</Text>
+          <Text style={styles.retryBtnText}>{t('result_try_again')}</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.homeBtn}
           onPress={() => navigation.popToTop()}
         >
-          <Text style={styles.homeBtnText}>Back to Home</Text>
+          <Text style={styles.homeBtnText}>{t('result_back_home')}</Text>
         </TouchableOpacity>
       </SafeAreaView>
     );
@@ -164,15 +171,15 @@ export default function ResultScreen({ route, navigation }: Props) {
         <View style={styles.heroSection}>
           <Text style={styles.heroNumber}>{bestMatch}</Text>
           <Text style={styles.heroLabel}>
-            Best Match ({games.length} game{games.length !== 1 ? 's' : ''})
+            {t(games.length !== 1 ? 'result_best_match_other' : 'result_best_match_one', { count: games.length })}
           </Text>
           <Text style={styles.contestInfo}>
-            Contest {contest} {date ? `• ${date}` : ''}
+            {t('result_contest_info', { contest })} {date ? `• ${date}` : ''}
           </Text>
         </View>
 
         {/* Drawn numbers */}
-        <Text style={styles.sectionLabel}>Drawn Numbers</Text>
+        <Text style={styles.sectionLabel}>{t('result_drawn')}</Text>
         <View style={styles.bubblesRow}>
           {drawnNumbers.map((num) => (
             <NumberBubble
@@ -185,14 +192,14 @@ export default function ResultScreen({ route, navigation }: Props) {
         </View>
 
         {/* Per-game results */}
-        <Text style={styles.sectionLabel}>Your Games</Text>
+        <Text style={styles.sectionLabel}>{t('result_your_games')}</Text>
         {gameResults.map((gr) => (
           <View key={gr.game} style={styles.gameCard}>
             <View style={styles.gameHeader}>
               <View style={styles.gameBadge}>
                 <Text style={styles.gameBadgeText}>{gr.game}</Text>
               </View>
-              <Text style={styles.gameTitle}>Game {gr.game}</Text>
+              <Text style={styles.gameTitle}>{t('result_game_title', { letter: gr.game })}</Text>
               <View
                 style={[
                   styles.matchBadge,
@@ -205,7 +212,7 @@ export default function ResultScreen({ route, navigation }: Props) {
                     gr.matchCount === 0 && { color: '#888' },
                   ]}
                 >
-                  {gr.matchCount} {gr.matchCount === 1 ? 'match' : 'matches'}
+                  {t(gr.matchCount !== 1 ? 'result_match_other' : 'result_match_one', { count: gr.matchCount })}
                 </Text>
               </View>
             </View>
@@ -227,15 +234,15 @@ export default function ResultScreen({ route, navigation }: Props) {
         <View style={styles.legend}>
           <View style={styles.legendItem}>
             <View style={[styles.legendDot, { backgroundColor: '#2ecc71' }]} />
-            <Text style={styles.legendText}>Match</Text>
+            <Text style={styles.legendText}>{t('result_legend_match')}</Text>
           </View>
           <View style={styles.legendItem}>
             <View style={[styles.legendDot, { backgroundColor: '#0f3460' }]} />
-            <Text style={styles.legendText}>Your number</Text>
+            <Text style={styles.legendText}>{t('result_legend_your')}</Text>
           </View>
           <View style={styles.legendItem}>
             <View style={[styles.legendDot, { backgroundColor: '#444' }]} />
-            <Text style={styles.legendText}>Drawn</Text>
+            <Text style={styles.legendText}>{t('result_legend_drawn')}</Text>
           </View>
         </View>
 
@@ -243,7 +250,7 @@ export default function ResultScreen({ route, navigation }: Props) {
           style={styles.scanAgainBtn}
           onPress={() => navigation.popToTop()}
         >
-          <Text style={styles.scanAgainText}>Scan Another Ticket</Text>
+          <Text style={styles.scanAgainText}>{t('result_scan_again')}</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>

@@ -1,7 +1,5 @@
 /**
- * HomeScreen — Landing screen with two main actions:
- *  1. Scan a new lottery ticket
- *  2. View scan history
+ * HomeScreen — Landing screen with two main actions and language toggle.
  */
 import React from 'react';
 import {
@@ -14,19 +12,32 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../App';
+import { useI18n } from '../i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
 export default function HomeScreen({ navigation }: Props) {
+  const { t, locale, setLocale } = useI18n();
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
+
+      {/* Language toggle */}
+      <TouchableOpacity
+        style={styles.langToggle}
+        onPress={() => setLocale(locale === 'pt' ? 'en' : 'pt')}
+        activeOpacity={0.7}
+      >
+        <Text style={styles.langText}>
+          {locale === 'pt' ? '🇧🇷 PT' : '🇺🇸 EN'}
+        </Text>
+      </TouchableOpacity>
+
       <View style={styles.header}>
         <Text style={styles.logo}>🎱</Text>
         <Text style={styles.title}>LottoLens</Text>
-        <Text style={styles.subtitle}>
-          Scan your Mega-Sena ticket and check results instantly
-        </Text>
+        <Text style={styles.subtitle}>{t('home_subtitle')}</Text>
       </View>
 
       <View style={styles.actions}>
@@ -35,7 +46,7 @@ export default function HomeScreen({ navigation }: Props) {
           activeOpacity={0.8}
           onPress={() => navigation.navigate('Camera')}
         >
-          <Text style={styles.primaryButtonText}>📷  Scan Ticket</Text>
+          <Text style={styles.primaryButtonText}>{t('home_scan')}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -43,7 +54,7 @@ export default function HomeScreen({ navigation }: Props) {
           activeOpacity={0.8}
           onPress={() => navigation.navigate('History')}
         >
-          <Text style={styles.secondaryButtonText}>📋  View History</Text>
+          <Text style={styles.secondaryButtonText}>{t('home_history')}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -57,6 +68,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
+  },
+  langToggle: {
+    position: 'absolute',
+    top: 56,
+    right: 24,
+    backgroundColor: '#16213e',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#0f3460',
+  },
+  langText: {
+    color: '#5588cc',
+    fontSize: 14,
+    fontWeight: '700',
   },
   header: {
     alignItems: 'center',

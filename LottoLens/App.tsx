@@ -6,6 +6,7 @@
  *  Home → History → Result (re-check)
  *
  * Supports multi-game lottery tickets (A, B, C, etc.)
+ * Supports Portuguese (default) and English via I18nProvider.
  */
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
@@ -13,6 +14,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { I18nProvider } from './i18n';
 import HomeScreen from './screens/HomeScreen';
 import CameraScreen from './screens/CameraScreen';
 import ReviewScreen from './screens/ReviewScreen';
@@ -40,43 +42,29 @@ const headerStyle = {
 
 export default function App() {
   return (
-    <SafeAreaProvider>
-      <StatusBar style="light" />
-      <NavigationContainer>
-        <Stack.Navigator
-          initialRouteName="Home"
-          screenOptions={{
-            ...headerStyle,
-            animation: 'slide_from_right',
-          }}
-        >
-          <Stack.Screen
-            name="Home"
-            component={HomeScreen}
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen
-            name="Camera"
-            component={CameraScreen}
-            options={{ title: 'Scan Ticket' }}
-          />
-          <Stack.Screen
-            name="Review"
-            component={ReviewScreen}
-            options={{ title: 'Review Games' }}
-          />
-          <Stack.Screen
-            name="Result"
-            component={ResultScreen}
-            options={{ title: 'Results' }}
-          />
-          <Stack.Screen
-            name="History"
-            component={HistoryScreen}
-            options={{ title: 'Scan History' }}
-          />
-        </Stack.Navigator>
-      </NavigationContainer>
-    </SafeAreaProvider>
+    <I18nProvider>
+      <SafeAreaProvider>
+        <StatusBar style="light" />
+        <NavigationContainer>
+          <Stack.Navigator
+            initialRouteName="Home"
+            screenOptions={{
+              ...headerStyle,
+              animation: 'slide_from_right',
+            }}
+          >
+            <Stack.Screen
+              name="Home"
+              component={HomeScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen name="Camera" component={CameraScreen} />
+            <Stack.Screen name="Review" component={ReviewScreen} />
+            <Stack.Screen name="Result" component={ResultScreen} />
+            <Stack.Screen name="History" component={HistoryScreen} />
+          </Stack.Navigator>
+        </NavigationContainer>
+      </SafeAreaProvider>
+    </I18nProvider>
   );
 }

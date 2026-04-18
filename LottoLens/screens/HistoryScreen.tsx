@@ -2,7 +2,7 @@
  * HistoryScreen — Displays all previously scanned multi-game tickets
  * stored in AsyncStorage. Users can tap an entry to re-check results.
  */
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useLayoutEffect } from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../App';
+import { useI18n } from '../i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'History'>;
 
@@ -39,8 +40,14 @@ interface HistoryEntry {
 const HISTORY_KEY = '@lottolens_history';
 
 export default function HistoryScreen({ navigation }: Props) {
+  const { t } = useI18n();
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Set translated header title
+  useLayoutEffect(() => {
+    navigation.setOptions({ title: t('nav_history') });
+  }, [navigation, t]);
 
   useFocusEffect(
     useCallback(() => {
@@ -62,12 +69,12 @@ export default function HistoryScreen({ navigation }: Props) {
 
   const clearHistory = () => {
     Alert.alert(
-      'Clear History',
-      'Are you sure you want to delete all scan history?',
+      t('history_clear_title'),
+      t('history_clear_msg'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('history_clear_cancel'), style: 'cancel' },
         {
-          text: 'Clear',
+          text: t('history_clear_confirm'),
           style: 'destructive',
           onPress: async () => {
             await AsyncStorage.removeItem(HISTORY_KEY);
@@ -101,7 +108,7 @@ export default function HistoryScreen({ navigation }: Props) {
       onPress={() => handleRecheck(item)}
     >
       <View style={styles.cardHeader}>
-        <Text style={styles.contestText}>Contest {item.contest}</Text>
+        <Text style={styles.contestText}>{t('history_contest', { contest: item.contest })}</Text>
         <View
           style={[
             styles.matchBadge,
@@ -111,7 +118,7 @@ export default function HistoryScreen({ navigation }: Props) {
           ]}
         >
           <Text style={styles.matchBadgeText}>
-            Best: {item.bestMatch}
+            {t('history_best', { count: item.bestMatch })}
           </Text>
         </View>
       </View>
@@ -124,14 +131,14 @@ export default function HistoryScreen({ navigation }: Props) {
               <Text style={styles.miniGameBadgeText}>{gr.game}</Text>
             </View>
             <Text style={styles.gamePreviewText}>
-              {gr.matchCount} {gr.matchCount === 1 ? 'match' : 'matches'}
+              {t(gr.matchCount !== 1 ? 'result_match_other' : 'result_match_one', { count: gr.matchCount })}
             </Text>
           </View>
         ))}
       </View>
 
       <Text style={styles.dateText}>
-        {item.games.length} game{item.games.length !== 1 ? 's' : ''} •{' '}
+        {t(item.games.length !== 1 ? 'history_game_other' : 'history_game_one', { count: item.games.length })} •{' '}
         {formatDate(item.scannedAt)}
       </Text>
     </TouchableOpacity>
@@ -142,10 +149,10 @@ export default function HistoryScreen({ navigation }: Props) {
       {history.length > 0 && (
         <View style={styles.headerRow}>
           <Text style={styles.headerTitle}>
-            {history.length} {history.length === 1 ? 'Ticket' : 'Tickets'}
+            {t(history.length !== 1 ? 'history_ticket_other' : 'history_ticket_one', { count: history.length })}
           </Text>
           <TouchableOpacity onPress={clearHistory}>
-            <Text style={styles.clearText}>Clear All</Text>
+            <Text style={styles.clearText}>{t('history_clear_all')}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -153,9 +160,9 @@ export default function HistoryScreen({ navigation }: Props) {
       {history.length === 0 && !loading ? (
         <View style={styles.empty}>
           <Text style={styles.emptyIcon}>📭</Text>
-          <Text style={styles.emptyText}>No scans yet</Text>
+          <Text style={styles.emptyText}>{t('history_empty')}</Text>
           <Text style={styles.emptyHint}>
-            Scan a lottery ticket to see it here
+            {t('history_empty_hint')}
           </Text>
         </View>
       ) : (

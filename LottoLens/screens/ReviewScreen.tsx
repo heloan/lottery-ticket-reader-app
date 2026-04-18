@@ -10,7 +10,7 @@
  *  5. Allow add/remove numbers, remove games, add games
  *  6. On confirm → validate all → navigate to Result
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect } from 'react';
 import {
   View,
   Text,
@@ -31,6 +31,7 @@ import type { RootStackParamList } from '../App';
 import { parseTicketText } from '../utils/parser';
 import type { GameEntry } from '../utils/parser';
 import { validateNumbers } from '../utils/checker';
+import { useI18n } from '../i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Review'>;
 
@@ -42,6 +43,12 @@ interface EditableGame {
 
 export default function ReviewScreen({ route, navigation }: Props) {
   const { imageUri } = route.params;
+  const { t } = useI18n();
+
+  // Set translated header title
+  useLayoutEffect(() => {
+    navigation.setOptions({ title: t('nav_review') });
+  }, [navigation, t]);
 
   const [games, setGames] = useState<EditableGame[]>([]);
   const [contest, setContest] = useState('');
@@ -72,7 +79,9 @@ export default function ReviewScreen({ route, navigation }: Props) {
     } catch (err) {
       console.warn('Failed to read image:', err);
       setOcrLoading(false);
-      setOcrError('Failed to read image. Please enter data manually.');
+      setOcrError(
+        t('review_image_failed')
+      );
       setGames([{ game: 'A', numbers: ['', '', '', '', '', ''] }]);
     }
   };
@@ -94,7 +103,7 @@ export default function ReviewScreen({ route, navigation }: Props) {
     } else {
       setGames([{ game: 'A', numbers: ['', '', '', '', '', ''] }]);
       setOcrError(
-        'No games detected. Please enter the ticket data manually.'
+        t('review_no_games')
       );
     }
     setOcrLoading(false);
@@ -104,7 +113,7 @@ export default function ReviewScreen({ route, navigation }: Props) {
   const handleOcrError = (error: string) => {
     console.warn('OCR Error:', error);
     setOcrError(
-      'OCR processing failed. Please enter the ticket data manually.'
+      t('review_ocr_failed')
     );
     setGames([{ game: 'A', numbers: ['', '', '', '', '', ''] }]);
     setOcrLoading(false);
@@ -127,7 +136,7 @@ export default function ReviewScreen({ route, navigation }: Props) {
     setGames((prev) => {
       const updated = [...prev];
       if (updated[gameIdx].numbers.length >= 15) {
-        Alert.alert('Limit', 'A game can have at most 15 numbers.');
+        Alert.alert(t('review_limit'), t('review_limit_msg'));
         return prev;
       }
       const nums = [...updated[gameIdx].numbers, ''];
@@ -140,7 +149,7 @@ export default function ReviewScreen({ route, navigation }: Props) {
     setGames((prev) => {
       const updated = [...prev];
       if (updated[gameIdx].numbers.length <= 6) {
-        Alert.alert('Minimum', 'A game must have at least 6 numbers.');
+        Alert.alert(t('review_minimum'), t('review_minimum_msg'));
         return prev;
       }
       const nums = updated[gameIdx].numbers.filter((_, i) => i !== numIdx);
@@ -151,13 +160,13 @@ export default function ReviewScreen({ route, navigation }: Props) {
 
   const removeGame = (gameIdx: number) => {
     if (games.length <= 1) {
-      Alert.alert('Cannot Remove', 'You need at least one game.');
+      Alert.alert(t('review_cannot_remove'), t('review_cannot_remove_msg'));
       return;
     }
-    Alert.alert('Remove Game', `Remove Game ${games[gameIdx].game}?`, [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('review_remove_game'), t('review_remove_game_msg', { letter: games[gameIdx].game }), [
+      { text: t('history_clear_cancel'), style: 'cancel' },
       {
-        text: 'Remove',
+        text: t('review_remove_game'),
         style: 'destructive',
         onPress: () =>
           setGames((prev) => prev.filter((_, i) => i !== gameIdx)),
@@ -179,7 +188,7 @@ export default function ReviewScreen({ route, navigation }: Props) {
 
   const handleConfirm = () => {
     if (!contest.trim()) {
-      Alert.alert('Missing Contest', 'Please enter the contest number.');
+      Alert.alert(t('review_missing_contest'), t('review_missing_contest_msg'));
       return;
     }
 
@@ -191,11 +200,11 @@ export default function ReviewScreen({ route, navigation }: Props) {
         .map((n) => parseInt(n, 10))
         .filter((n) => !isNaN(n));
 
-      const validation = validateNumbers(parsed);
+      const validation = validateNumbers(parsed, t as any);
       if (!validation.valid) {
         Alert.alert(
-          `Game ${g.game} Invalid`,
-          validation.error || 'Check the numbers.'
+          t('review_game_invalid', { letter: g.game }),
+          validation.error || t('review_check_numbers')
         );
         return;
       }
@@ -214,9 +223,9 @@ export default function ReviewScreen({ route, navigation }: Props) {
     return (
       <SafeAreaView style={styles.centered}>
         <ActivityIndicator size="large" color="#5588cc" />
-        <Text style={styles.loadingText}>Processing ticket image...</Text>
+        <Text style={styles.loadingText}>{t('review_loading')}</Text>
         <Text style={styles.loadingHint}>
-          Extracting games from your ticket
+          {t('review_loading_hint')}
         </Text>
         {/* Hidden WebView that performs the actual OCR */}
         {base64Image && (
@@ -241,10 +250,9 @@ export default function ReviewScreen({ route, navigation }: Props) {
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
         >
-          <Text style={styles.title}>Review Ticket</Text>
+          <Text style={styles.title}>{t('review_title')}</Text>
           <Text style={styles.subtitle}>
-            {games.length} game{games.length !== 1 ? 's' : ''} detected —
-            verify and correct
+            {t(games.length !== 1 ? 'review_subtitle_other' : 'review_subtitle_one', { count: games.length })}
           </Text>
 
           {ocrError && (
@@ -256,23 +264,23 @@ export default function ReviewScreen({ route, navigation }: Props) {
           {/* Contest & Date */}
           <View style={styles.metaRow}>
             <View style={styles.metaField}>
-              <Text style={styles.metaLabel}>Contest</Text>
+              <Text style={styles.metaLabel}>{t('review_contest')}</Text>
               <TextInput
                 style={styles.metaInput}
                 value={contest}
                 onChangeText={(v) => setContest(v.replace(/\D/g, ''))}
                 keyboardType="number-pad"
-                placeholder="e.g. 3662"
+                placeholder={t('review_contest_placeholder')}
                 placeholderTextColor="#555"
               />
             </View>
             <View style={styles.metaField}>
-              <Text style={styles.metaLabel}>Date</Text>
+              <Text style={styles.metaLabel}>{t('review_date')}</Text>
               <TextInput
                 style={styles.metaInput}
                 value={date}
                 onChangeText={setDate}
-                placeholder="dd/mm/yyyy"
+                placeholder={t('review_date_placeholder')}
                 placeholderTextColor="#555"
               />
             </View>
@@ -286,7 +294,7 @@ export default function ReviewScreen({ route, navigation }: Props) {
                   <Text style={styles.gameBadgeText}>{game.game}</Text>
                 </View>
                 <Text style={styles.gameTitle}>
-                  Game {game.game} — {game.numbers.length} numbers
+                  {t('review_game_title', { letter: game.game, count: game.numbers.length })}
                 </Text>
                 <TouchableOpacity
                   onPress={() => removeGame(gIdx)}
@@ -336,7 +344,7 @@ export default function ReviewScreen({ route, navigation }: Props) {
 
           {/* Add a new game */}
           <TouchableOpacity style={styles.addGameBtn} onPress={addGame}>
-            <Text style={styles.addGameText}>+ Add Game</Text>
+            <Text style={styles.addGameText}>{t('review_add_game')}</Text>
           </TouchableOpacity>
 
           {/* Confirm */}
@@ -345,7 +353,7 @@ export default function ReviewScreen({ route, navigation }: Props) {
             activeOpacity={0.8}
             onPress={handleConfirm}
           >
-            <Text style={styles.confirmBtnText}>Check Results</Text>
+            <Text style={styles.confirmBtnText}>{t('review_confirm')}</Text>
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>

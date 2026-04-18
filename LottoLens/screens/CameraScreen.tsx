@@ -8,7 +8,7 @@
  *  4. Show photo preview with Confirm / Retake buttons
  *  5. On confirm → navigate to Review with the image URI
  */
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useLayoutEffect } from 'react';
 import {
   View,
   Text,
@@ -22,14 +22,21 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../App';
+import { useI18n } from '../i18n';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Camera'>;
 
 export default function CameraScreen({ navigation }: Props) {
+  const { t } = useI18n();
   const [permission, requestPermission] = useCameraPermissions();
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [taking, setTaking] = useState(false);
   const cameraRef = useRef<CameraView>(null);
+
+  // Set translated header title
+  useLayoutEffect(() => {
+    navigation.setOptions({ title: t('nav_scan_ticket') });
+  }, [navigation, t]);
 
   // Permission still loading
   if (!permission) {
@@ -45,10 +52,10 @@ export default function CameraScreen({ navigation }: Props) {
     return (
       <SafeAreaView style={styles.centered}>
         <Text style={styles.permText}>
-          LottoLens needs camera access to scan tickets.
+          {t('camera_permission')}
         </Text>
         <TouchableOpacity style={styles.grantBtn} onPress={requestPermission}>
-          <Text style={styles.grantBtnText}>Grant Permission</Text>
+          <Text style={styles.grantBtnText}>{t('camera_grant')}</Text>
         </TouchableOpacity>
       </SafeAreaView>
     );
@@ -67,7 +74,7 @@ export default function CameraScreen({ navigation }: Props) {
         setPhotoUri(photo.uri);
       }
     } catch (err) {
-      Alert.alert('Error', 'Failed to capture image. Please try again.');
+      Alert.alert('Error', t('camera_error'));
     } finally {
       setTaking(false);
     }
@@ -77,14 +84,14 @@ export default function CameraScreen({ navigation }: Props) {
   if (photoUri) {
     return (
       <SafeAreaView style={styles.container}>
-        <Text style={styles.previewTitle}>Preview</Text>
+        <Text style={styles.previewTitle}>{t('camera_preview')}</Text>
         <Image source={{ uri: photoUri }} style={styles.preview} />
         <View style={styles.previewActions}>
           <TouchableOpacity
             style={styles.retakeBtn}
             onPress={() => setPhotoUri(null)}
           >
-            <Text style={styles.retakeBtnText}>Retake</Text>
+            <Text style={styles.retakeBtnText}>{t('camera_retake')}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.confirmBtn}
@@ -92,7 +99,7 @@ export default function CameraScreen({ navigation }: Props) {
               navigation.navigate('Review', { imageUri: photoUri })
             }
           >
-            <Text style={styles.confirmBtnText}>Confirm Image</Text>
+            <Text style={styles.confirmBtnText}>{t('camera_confirm')}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -105,7 +112,7 @@ export default function CameraScreen({ navigation }: Props) {
       <CameraView ref={cameraRef} style={styles.camera} facing="back" />
       <View style={styles.overlay}>
         <Text style={styles.hint}>
-          Position the ticket inside the frame
+          {t('camera_hint')}
         </Text>
         <View style={styles.frame} />
         <TouchableOpacity
